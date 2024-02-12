@@ -10,7 +10,7 @@ This is intented for:
 
 The basic operation work as follow:
 ```scala3
-import bp.*
+import bytepack.*
 
 enum En derives EnumMirror:
   case E1, E2
@@ -21,4 +21,10 @@ case class Test(i: Int, e: En) derives Pack
 val packed: IArray[Byte] = Pack.pack(Test(1, En.T2)
 
 val test: Test = Pack.unpack[Test](packed)
+```
+
+SBT dependency is:
+
+```
+libraryDependencies += "org.openmole" %% "byte-pack" % "0.1"
 ```
