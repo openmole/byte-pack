@@ -18,7 +18,7 @@ package bp
  */
 
 import scala.deriving.*
-import scala.compiletime.{erasedValue, summonInline}
+import scala.compiletime.*
 import java.nio.ByteBuffer
 
 import reflect.Selectable.reflectiveSelectable
@@ -75,6 +75,13 @@ object Pack:
 
   def indexOf[T: Pack](i: Int) = summon[Pack[T]].index(i)
 
+  def size[T: Pack] = summon[Pack[T]].size
+
+//  def indexOf[T: Pack](name: String)(using mirror: Mirror.ProductOf[T]): Unit =
+//    println(constValueTuple[mirror.MirroredElemLabels].toList)
+//    ???
+//    //summon[Pack[T]].index(i)
+
   def packProduct[T](p: Mirror.ProductOf[T], elems: Array[Pack[_]]): Pack[T] =
     def packElement(elem: Pack[_])(x: Any, b: ByteBuffer): Unit =
       elem.asInstanceOf[Pack[Any]].pack(x, b)
@@ -94,7 +101,7 @@ object Pack:
         iterator(e).zip(elems.iterator).foreach:
           case (e, elem) => packElement(elem)(e, b)
 
-      def size = elems.map(_.size).sum
+      lazy val size = elems.map(_.size).sum
 
       def unpack(index: Int, b: IArray[Byte]): T =
         def recurse(tuple: Tuple, index: Int, elemIndex: Int): Tuple =
