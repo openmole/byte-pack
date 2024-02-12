@@ -1,4 +1,4 @@
-package bp
+package bytepack
 
 /*
  * Copyright (C) 2024 Romain Reuillon

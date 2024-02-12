@@ -1,4 +1,4 @@
-package bp
+package bytepack
 
 import java.nio.ByteBuffer
 
