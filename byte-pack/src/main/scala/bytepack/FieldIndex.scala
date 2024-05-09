@@ -48,6 +48,18 @@ object FieldIndex:
     import quotes.*
     import quotes.reflect.*
 
+
+    def recur(tree: Tree, selects: List[String]): List[String] = tree match
+      case Ident(_) if selects.nonEmpty => selects
+      case Select(qual, name) => recur(qual, name :: selects)
+      case Inlined(_, _, t) => recur(t, selects)
+      case DefDef(_, _, _, Some(t)) => recur(t, selects)
+      case Block(l, _) => l.flatMap(t => recur(t, selects))
+      case _ => List()
+
+//    println(f.asTerm.show(using Printer.TreeStructure))
+//    println(recur(f.asTerm, List()))
+
     val sym = TypeRepr.of[F].typeSymbol
 
 //    object CaseClass:
@@ -59,13 +71,14 @@ object FieldIndex:
     //   f.asTerm match
     //     case Select(_,_) => "test"
 
-    val source = f.asTerm.pos.sourceCode
+    //val source = f.asTerm.pos.sourceCode
 
-    val field = source.head.dropWhile(_ != '.').drop(1)
+    val field = recur(f.asTerm, List()).head //source.head.dropWhile(_ != '.').drop(1)
+
     val index =
       sym.caseFields.zipWithIndex.find((f, _) => f.name == field) match
         case Some(f) => f._2 //if p.flags.is(Flags.HasDefault)
-        case None => report.errorAndAbort(s"No field named ${source} found in case class ${sym}", f.asTerm.pos)
+        case None => report.errorAndAbort(s"No field named ${field} found in case class ${sym}", f.asTerm.pos)
 
     //   val field = source.head.dropWhile(_ != '.').drop(1)
 

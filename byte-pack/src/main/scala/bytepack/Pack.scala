@@ -86,7 +86,7 @@ object Pack:
     p.unpack(0, b)
 
   def indexOf[T: PackProduct](i: Int) = summon[PackProduct[T]].index(i)
-  inline def indexOf[F: PackProduct](f: F => Any): Int = ${ FieldIndex.fieldIndexImpl[F]('{f}) }
+  inline def indexOf[F: PackProduct](inline f: F => Any): Int = ${ FieldIndex.fieldIndexImpl[F]('{f}) }
 
 
   // TODO find a way to check field name at compile time and get field type

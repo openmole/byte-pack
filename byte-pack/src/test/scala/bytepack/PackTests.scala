@@ -27,7 +27,6 @@ object PackTests:
   case class TestClass(i: Int, x: Float, e: En, e2: Option[En], e3: Option[En])
   case class UpperClass(testClass: TestClass, j: Byte)
 
-
 class PackTests extends AnyFunSuite:
 
   test("Packing and unpacking should return the same case class"):
