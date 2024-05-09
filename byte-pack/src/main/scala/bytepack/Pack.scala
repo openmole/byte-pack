@@ -85,16 +85,18 @@ object Pack:
     val p = summon[Pack[T]]
     p.unpack(0, b)
 
-  def indexOf[T: Pack](i: Int) = summon[Pack[T]].index(i)
+  def indexOf[T: PackProduct](i: Int) = summon[PackProduct[T]].index(i)
+
+  // TODO find a way to check field name at compile time and get field type
+  def indexOf[T: PackProduct](field: String): Int =
+    val pack = summon[PackProduct[T]]
+    val index = pack.fields.getOrElse(field, throw RuntimeException(s"Field $field not found among ${pack.fields}"))
+    indexOf[T](index)
 
   def size[T: Pack] = summon[Pack[T]].size
 
-//  def indexOf[T: Pack](name: String)(using mirror: Mirror.ProductOf[T]): Unit =
-//    println(constValueTuple[mirror.MirroredElemLabels].toList)
-//    ???
-//    //summon[Pack[T]].index(i)
 
-  def packProduct[T](p: Mirror.ProductOf[T], elems: Array[Pack[_]]): Pack[T] =
+  def packProduct[T](p: Mirror.ProductOf[T], elems: Array[Pack[_]], fieldsValue: Map[String, Int]): Pack[T] with PackProduct[T] =
     def packElement(elem: Pack[_])(x: Any, b: ByteBuffer): Unit =
       elem.asInstanceOf[Pack[Any]].pack(x, b)
 
@@ -108,7 +110,7 @@ object Pack:
 
     def iterator[T](p: T) = p.asInstanceOf[Product].productIterator
 
-    new Pack[T]:
+    new Pack[T] with PackProduct[T]:
       def pack(e: T, b: ByteBuffer): Unit =
         iterator(e).zip(elems.iterator).foreach:
           case (e, elem) => packElement(elem)(e, b)
@@ -126,20 +128,24 @@ object Pack:
 
         p.fromProduct(recurse(EmptyTuple, index, 0))
 
-      override def index: Array[Int] = indexValue
+      def index: Array[Int] = indexValue
+      lazy val fields = fieldsValue
 
   inline def summonAll[T <: Tuple]: List[Pack[_]] =
     inline erasedValue[T] match
       case _: EmptyTuple => Nil
       case _: (t *: ts) => summonInline[Pack[t]] :: summonAll[ts]
 
-  inline given derived[T](using m: Mirror.ProductOf[T]): Pack[T] =
+  inline given derived[T](using m: Mirror.ProductOf[T]): PackProduct[T] =
+    lazy val fields = FieldIndex.fields[T]
     lazy val elemInstances = summonAll[m.MirroredElemTypes].toArray
-    packProduct(m, elemInstances)
+    packProduct(m, elemInstances, fields)
 
 trait Pack[T]:
   def pack(t: T, buffer: ByteBuffer): Unit
   def size: Int
   def unpack(index: Int, b: IArray[Byte]): T
-  def index: Array[Int] = Array(0)
 
+trait PackProduct[T] extends Pack[T]:
+  def index: Array[Int]
+  lazy val fields: Map[String, Int]
