@@ -56,12 +56,24 @@ object Pack:
     def size = 8
     def unpack(index: Int, b: IArray[Byte]) = BytePack.extractDouble(b, index)
 
+  given [T](using mirror: EnumMirror[T], sm: Mirror.SumOf[T]): Pack[T] with
+    def pack(e: T, b: ByteBuffer): Unit = b.put(sm.ordinal(e).toByte)
+    def size: Int = 1
+    def unpack(index: Int, b: IArray[Byte]): T = mirror.fromOrdinal(b(index).toInt).get
 
-  given [T](using mirror: EnumMirror[T], sm: Mirror.SumOf[T]): Pack[T] =
-    new Pack[T]:
-      def pack(e: T, b: ByteBuffer): Unit = b.put(sm.ordinal(e).toByte)
-      def size: Int = 1
-      def unpack(index: Int, b: IArray[Byte]): T = mirror.fromOrdinal(b(index).toInt).get
+  given [T](using mirror: EnumMirror[T], sm: Mirror.SumOf[T]): Pack[Option[T]] with
+    def pack(e: Option[T], b: ByteBuffer): Unit =
+      e match
+        case Some(e) => b.put(sm.ordinal(e).toByte)
+        case None => b.put(-1.toByte)
+
+    def size: Int = 1
+
+    def unpack(index: Int, b: IArray[Byte]): Option[T] =
+      b(index).toInt match
+        case -1 => None
+        case v => Some(mirror.fromOrdinal(v).get)
+
 
   def pack[T: Pack](t: T): IArray[Byte] =
     val p = summon[Pack[T]]

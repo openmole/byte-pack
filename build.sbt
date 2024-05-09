@@ -6,7 +6,7 @@ import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 ThisBuild / organization := "org.openmole"
 name := "byte-pack"
 
-ThisBuild / scalaVersion := "3.3.1"
+ThisBuild / scalaVersion := "3.3.3"
 
 ThisBuild / licenses := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/"))
 ThisBuild / homepage := Some(url("https://github.com/openmole/byte-pack"))
