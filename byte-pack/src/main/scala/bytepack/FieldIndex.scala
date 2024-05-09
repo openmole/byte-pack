@@ -41,9 +41,9 @@ object FieldIndex:
     '{ $namesExpr.toMap }
 
 
-  inline def fieldIndex[F](f: F => Any)(using p: PackProduct[F]): Int = ${ fieldIndexImpl[F, Any]('f, 'p) }
+//  inline def fieldIndex[F](f: F => Any): Int = ${ fieldIndexImpl[F]('{f}) }
 
-  def fieldIndexImpl[F, T](f: Expr[F => T], t: Expr[PackProduct[F]])(using quotes: Quotes, tpef: Type[F], typet: Type[T]): Expr[Int] =
+  def fieldIndexImpl[F](f: Expr[F => Any])(using quotes: Quotes, tpef: Type[F]): Expr[Int] =
     // val term = f.show
     import quotes.*
     import quotes.reflect.*
@@ -58,7 +58,7 @@ object FieldIndex:
 //
     //   f.asTerm match
     //     case Select(_,_) => "test"
-    
+
     val source = f.asTerm.pos.sourceCode
 
     val field = source.head.dropWhile(_ != '.').drop(1)
@@ -70,9 +70,13 @@ object FieldIndex:
     //   val field = source.head.dropWhile(_ != '.').drop(1)
 
     val v = Expr(index)
+    val pack =
+      Expr.summon[PackProduct[F]] match
+        case Some(p) => p
+        case None => report.errorAndAbort(s"Not found PackProduct for type ${sym}", f.asTerm.pos)
 
     '{
-      Pack.indexOf[F]($v)(using $t)
+      Pack.indexOf[F]($v)(using $pack)
     }
 
 //
