@@ -10,6 +10,5 @@ pom.xml
 *.DS_Store
 tags
 
-test
 .bsp
 
