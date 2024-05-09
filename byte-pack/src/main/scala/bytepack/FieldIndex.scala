@@ -40,6 +40,41 @@ object FieldIndex:
 
     '{ $namesExpr.toMap }
 
+
+  inline def fieldIndex[F](f: F => Any)(using p: PackProduct[F]): Int = ${ fieldIndexImpl[F, Any]('f, 'p) }
+
+  def fieldIndexImpl[F, T](f: Expr[F => T], t: Expr[PackProduct[F]])(using quotes: Quotes, tpef: Type[F], typet: Type[T]): Expr[Int] =
+    // val term = f.show
+    import quotes.*
+    import quotes.reflect.*
+
+    val sym = TypeRepr.of[F].typeSymbol
+
+//    object CaseClass:
+//      def unapply(term: Term): Option[Term] =
+//        term.tpe.classSymbol.flatMap: sym =>
+//          Option.when(sym.flags.is(Flags.Case))(term)
+//
+//
+    //   f.asTerm match
+    //     case Select(_,_) => "test"
+    
+    val source = f.asTerm.pos.sourceCode
+
+    val field = source.head.dropWhile(_ != '.').drop(1)
+    val index =
+      sym.caseFields.zipWithIndex.find((f, _) => f.name == field) match
+        case Some(f) => f._2 //if p.flags.is(Flags.HasDefault)
+        case None => report.errorAndAbort(s"No field named ${source} found in case class ${sym}", f.asTerm.pos)
+
+    //   val field = source.head.dropWhile(_ != '.').drop(1)
+
+    val v = Expr(index)
+
+    '{
+      Pack.indexOf[F]($v)(using $t)
+    }
+
 //
 //    val body = comp.tree.asInstanceOf[ClassDef].body
 //    val idents: List[Term] =

@@ -86,12 +86,17 @@ object Pack:
     p.unpack(0, b)
 
   def indexOf[T: PackProduct](i: Int) = summon[PackProduct[T]].index(i)
+  inline def indexOf[F](f: F => Any)(using p: PackProduct[F]): Int = ${ FieldIndex.fieldIndexImpl[F, Any]('f, 'p) }
+
 
   // TODO find a way to check field name at compile time and get field type
   def indexOf[T: PackProduct](field: String): Int =
     val pack = summon[PackProduct[T]]
     val index = pack.fields.getOrElse(field, throw RuntimeException(s"Field $field not found among ${pack.fields}"))
     indexOf[T](index)
+
+
+  //inline def fieldName[F](inline f: F => Any) = FieldIndex.fieldName(f)
 
   def size[T: Pack] = summon[Pack[T]].size
 

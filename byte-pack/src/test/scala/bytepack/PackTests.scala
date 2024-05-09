@@ -43,5 +43,4 @@ class PackTests extends AnyFunSuite:
     val packed = Pack.pack(p)
     assert(Pack.indexOf[UpperClass](1) == 11)
     assert(packed(Pack.indexOf[UpperClass](1)) == 8.toByte)
-    assert(Pack.indexOf[UpperClass]("j") == 11)
-
+    assert(Pack.indexOf[UpperClass](_.j) == 11)
