@@ -107,6 +107,11 @@ object Pack:
 
     def iterator[T](p: T) = p.asInstanceOf[Product].productIterator
 
+    lazy val indexValue =
+      val sizes = elems.map(_.size)
+      IArray.tabulate(sizes.length): x =>
+        sizes.take(x).sum
+
     new Pack[T] with PackProduct[T]:
       def pack(e: T, b: ByteBuffer): Unit =
         iterator(e).zip(elems.iterator).foreach:
@@ -125,7 +130,7 @@ object Pack:
 
         p.fromProduct(recurse(EmptyTuple, index, 0))
 
-      inline def index(i: Int): Int = elems.map(_.size).take(i).sum
+      inline def index(i: Int): Int = indexValue(i)
 
   inline def summonAll[T <: Tuple](buffer: mutable.ArrayBuffer[Pack[_]]): Array[Pack[_]] =
     inline erasedValue[T] match
