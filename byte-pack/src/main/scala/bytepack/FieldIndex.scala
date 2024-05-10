@@ -66,7 +66,7 @@ object FieldIndex:
     def getFieldType(fromType: TypeRepr, fieldName: String): TypeRepr =
       def getClassSymbol(tpe: TypeRepr): Symbol = tpe.classSymbol match
         case Some(sym) => sym
-        case None => report.errorAndAbort(s"${tpe} is not a concrete type", f.asTerm.pos)
+        case None => report.errorAndAbort(s"${tpe} is not a concrete type")
 
 
       // We need to do this to support tuples, because even though they conform as case classes in other respects,
@@ -128,7 +128,7 @@ object FieldIndex:
           val index =
             tpe.typeSymbol.caseFields.zipWithIndex.find((f, _) => f.name == fieldName) match
               case Some(f) => f._2 //if p.flags.is(Flags.HasDefault)
-              case None => report.errorAndAbort(s"No field named ${fieldName} found in case class ${tpe}", f.asTerm.pos)
+              case None => report.errorAndAbort(s"No field named ${fieldName} found in case class ${tpe}")
 
           //   val field = source.head.dropWhile(_ != '.').drop(1)
 
@@ -143,17 +143,22 @@ object FieldIndex:
                     '{
                       Pack.indexOf[t]($v)(using $pack)
                     }
-                  case None => report.errorAndAbort(s"No PackProduct type class defined for $tpe", f.asTerm.pos)
-
+                  case None => report.errorAndAbort(s"No PackProduct type class defined for $tpe")
 
           val fieldType = getFieldType(tpe, fieldName)
           fieldIndex(fieldType, tail, code :: acc)
 
     val selects = recur(f.asTerm, List())
 
-    val codes = Expr.ofSeq(fieldIndex(TypeRepr.of[F], selects, List()).toVector)
+    val codes = fieldIndex(TypeRepr.of[F], selects, List()).toVector
 
-    '{ ${codes}.sum }
+    codes.size match
+      case 0 => report.errorAndAbort(s"Improper expression, you should only provide a path to a field here")
+      case 1 => codes.head
+      case 2 => '{ ${codes(0)} + ${codes(1)} }
+      case 3 => '{ ${codes(0)} + ${codes(1)} + ${codes(2)} }
+      case 4 => '{ ${codes(0)} + ${codes(1)} + ${codes(2)} + ${codes(4)} }
+      case _ => '{ ${Expr.ofSeq(codes)}.sum }
 
 //    if selects.size != 1 then report.errorAndAbort("Only one level of case class is supported for now", f.asTerm.pos)
 //

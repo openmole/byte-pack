@@ -87,10 +87,10 @@ object Pack:
     p.unpack(0, b)
 
   def unpack[T]: MkUnpackField[T] = new MkUnpackField[T]
-  
-  inline def indexOf[T: PackProduct](i: Int) = summon[PackProduct[T]].index(i)
+
+  inline def indexOf[T: PackProduct](inline i: Int) = summon[PackProduct[T]].index(i)
   def indexOf[From]: MkFieldIndex[From] = new MkFieldIndex[From]() //${ FieldIndex.fieldIndexImpl[F]('{ f }) }
-  
+
   //inline def fieldName[F](inline f: F => Any) = FieldIndex.fieldName(f)
 
   def size[T: Pack] = summon[Pack[T]].size
@@ -128,7 +128,7 @@ object Pack:
 
         p.fromProduct(recurse(EmptyTuple, index, 0))
 
-      def index: Array[Int] = indexValue
+      inline def index: Array[Int] = indexValue
 
   inline def summonAll[T <: Tuple]: List[Pack[_]] =
     inline erasedValue[T] match
