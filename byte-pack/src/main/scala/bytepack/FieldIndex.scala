@@ -76,8 +76,10 @@ object FieldIndex:
     //     case Select(_,_) => "test"
 
     //val source = f.asTerm.pos.sourceCode
+    val selects = recur(f.asTerm, List())
+    if selects.size != 1 then report.errorAndAbort("Only one level of case class is supported for now", f.asTerm.pos)
 
-    val field = recur(f.asTerm, List()).head //source.head.dropWhile(_ != '.').drop(1)
+    val field = selects.head //source.head.dropWhile(_ != '.').drop(1)
 
     val index =
       sym.caseFields.zipWithIndex.find((f, _) => f.name == field) match
@@ -95,6 +97,26 @@ object FieldIndex:
     '{
       Pack.indexOf[F]($v)(using $pack)
     }
+
+
+  class MkUnpackField[From]:
+    transparent inline def apply[To](b: IArray[Byte], inline lambda: From => To): To = ${ unpackFieldImpl[From, To]('{lambda}, '{b}) }
+
+
+  def unpackFieldImpl[F, T](f: Expr[F => T], b: Expr[IArray[Byte]])(using quotes: Quotes, tpef: Type[F], tpeT: Type[T]): Expr[T] =
+    import quotes.*
+    import quotes.reflect.*
+
+    val packT =
+      Expr.summon[Pack[T]] match
+        case Some(p) => p
+        case None => report.errorAndAbort(s"Not found Pack for type ${tpeT}", f.asTerm.pos)
+
+    '{
+      val index = Pack.indexOf[F]($f)
+      ${packT}.unpack(index, $b)
+    }
+
 
 //
 //    val body = comp.tree.asInstanceOf[ClassDef].body

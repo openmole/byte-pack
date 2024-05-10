@@ -17,7 +17,7 @@ package bytepack
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import bytepack.FieldIndex.MkFieldIndex
+import bytepack.FieldIndex.{MkFieldIndex, MkUnpackField}
 
 import scala.deriving.*
 import scala.compiletime.*
@@ -86,10 +86,11 @@ object Pack:
     val p = summon[Pack[T]]
     p.unpack(0, b)
 
-  def indexOf[T: PackProduct](i: Int) = summon[PackProduct[T]].index(i)
-  def indexOf[From]: MkFieldIndex[From] = new FieldIndex.MkFieldIndex[From]() //${ FieldIndex.fieldIndexImpl[F]('{ f }) }
-
-
+  def unpack[T]: MkUnpackField[T] = new MkUnpackField[T]
+  
+  inline def indexOf[T: PackProduct](i: Int) = summon[PackProduct[T]].index(i)
+  def indexOf[From]: MkFieldIndex[From] = new MkFieldIndex[From]() //${ FieldIndex.fieldIndexImpl[F]('{ f }) }
+  
   //inline def fieldName[F](inline f: F => Any) = FieldIndex.fieldName(f)
 
   def size[T: Pack] = summon[Pack[T]].size
