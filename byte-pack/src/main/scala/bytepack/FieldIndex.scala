@@ -41,9 +41,13 @@ object FieldIndex:
     '{ $namesExpr.toMap }
 
 
+
+  class MkFieldIndex[From]:
+    transparent inline def apply[To](inline lambda: From => To): Int = ${ fieldIndexImpl[From, To]('{lambda}) }
+
 //  inline def fieldIndex[F](f: F => Any): Int = ${ fieldIndexImpl[F]('{f}) }
 
-  def fieldIndexImpl[F](f: Expr[F => Any])(using quotes: Quotes, tpef: Type[F]): Expr[Int] =
+  def fieldIndexImpl[F, T](f: Expr[F => T])(using quotes: Quotes, tpef: Type[F]): Expr[Int] =
     // val term = f.show
     import quotes.*
     import quotes.reflect.*
@@ -51,7 +55,7 @@ object FieldIndex:
 
     def recur(tree: Tree, selects: List[String]): List[String] = tree match
       case Ident(_) if selects.nonEmpty => selects
-      case Select(qual, name) => recur(qual, name :: selects)
+      case s @ Select(qual, name) => recur(qual, name :: selects)
       case Inlined(_, _, t) => recur(t, selects)
       case DefDef(_, _, _, Some(t)) => recur(t, selects)
       case Block(l, _) => l.flatMap(t => recur(t, selects))

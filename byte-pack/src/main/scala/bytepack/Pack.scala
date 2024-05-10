@@ -17,10 +17,11 @@ package bytepack
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import bytepack.FieldIndex.MkFieldIndex
+
 import scala.deriving.*
 import scala.compiletime.*
 import java.nio.ByteBuffer
-
 import reflect.Selectable.reflectiveSelectable
 
 export enumextensions.EnumMirror
@@ -86,14 +87,7 @@ object Pack:
     p.unpack(0, b)
 
   def indexOf[T: PackProduct](i: Int) = summon[PackProduct[T]].index(i)
-  inline def indexOf[F: PackProduct](inline f: F => Any): Int = ${ FieldIndex.fieldIndexImpl[F]('{f}) }
-
-
-  // TODO find a way to check field name at compile time and get field type
-  def indexOf[T: PackProduct](field: String): Int =
-    val pack = summon[PackProduct[T]]
-    val index = pack.fields.getOrElse(field, throw RuntimeException(s"Field $field not found among ${pack.fields}"))
-    indexOf[T](index)
+  def indexOf[From]: MkFieldIndex[From] = new FieldIndex.MkFieldIndex[From]() //${ FieldIndex.fieldIndexImpl[F]('{ f }) }
 
 
   //inline def fieldName[F](inline f: F => Any) = FieldIndex.fieldName(f)
@@ -101,7 +95,7 @@ object Pack:
   def size[T: Pack] = summon[Pack[T]].size
 
 
-  def packProduct[T](p: Mirror.ProductOf[T], elems: Array[Pack[_]], fieldsValue: Map[String, Int]): Pack[T] with PackProduct[T] =
+  def packProduct[T](p: Mirror.ProductOf[T], elems: Array[Pack[_]]): Pack[T] with PackProduct[T] =
     def packElement(elem: Pack[_])(x: Any, b: ByteBuffer): Unit =
       elem.asInstanceOf[Pack[Any]].pack(x, b)
 
@@ -134,7 +128,6 @@ object Pack:
         p.fromProduct(recurse(EmptyTuple, index, 0))
 
       def index: Array[Int] = indexValue
-      lazy val fields = fieldsValue
 
   inline def summonAll[T <: Tuple]: List[Pack[_]] =
     inline erasedValue[T] match
@@ -142,9 +135,8 @@ object Pack:
       case _: (t *: ts) => summonInline[Pack[t]] :: summonAll[ts]
 
   inline given derived[T](using m: Mirror.ProductOf[T]): PackProduct[T] =
-    lazy val fields = FieldIndex.fields[T]
     lazy val elemInstances = summonAll[m.MirroredElemTypes].toArray
-    packProduct(m, elemInstances, fields)
+    packProduct(m, elemInstances)
 
 trait Pack[T]:
   def pack(t: T, buffer: ByteBuffer): Unit
@@ -153,4 +145,3 @@ trait Pack[T]:
 
 trait PackProduct[T] extends Pack[T]:
   def index: Array[Int]
-  lazy val fields: Map[String, Int]
