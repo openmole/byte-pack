@@ -157,7 +157,7 @@ object FieldIndex:
       case 1 => codes.head
       case 2 => '{ ${codes(0)} + ${codes(1)} }
       case 3 => '{ ${codes(0)} + ${codes(1)} + ${codes(2)} }
-      case 4 => '{ ${codes(0)} + ${codes(1)} + ${codes(2)} + ${codes(4)} }
+      case 4 => '{ ${codes(0)} + ${codes(1)} + ${codes(2)} + ${codes(3)} }
       case _ => '{ ${Expr.ofSeq(codes)}.sum }
 
 //    if selects.size != 1 then report.errorAndAbort("Only one level of case class is supported for now", f.asTerm.pos)
