@@ -105,7 +105,7 @@ object Pack:
 
     val indexValue =
       val sizes = elems.map(_.size)
-      Array.tabulate(sizes.length): x =>
+      IArray.tabulate(sizes.length): x =>
         sizes.take(x).sum
 
     def iterator[T](p: T) = p.asInstanceOf[Product].productIterator
@@ -128,7 +128,7 @@ object Pack:
 
         p.fromProduct(recurse(EmptyTuple, index, 0))
 
-      inline def index: Array[Int] = indexValue
+      inline def index: IArray[Int] = indexValue
 
   inline def summonAll[T <: Tuple]: List[Pack[_]] =
     inline erasedValue[T] match
@@ -145,4 +145,4 @@ trait Pack[T]:
   def unpack(index: Int, b: IArray[Byte]): T
 
 trait PackProduct[T] extends Pack[T]:
-  def index: Array[Int]
+  def index: IArray[Int]
