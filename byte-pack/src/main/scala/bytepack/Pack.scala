@@ -23,6 +23,8 @@ import scala.deriving.*
 import scala.compiletime.*
 import java.nio.ByteBuffer
 import reflect.Selectable.reflectiveSelectable
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 export enumextensions.EnumMirror
 
@@ -96,17 +98,12 @@ object Pack:
   def size[T: Pack] = summon[Pack[T]].size
 
 
-  def packProduct[T](p: Mirror.ProductOf[T], elems: Array[Pack[_]]): Pack[T] with PackProduct[T] =
+  def packProduct[T](p: Mirror.ProductOf[T], elems: => Array[Pack[_]]): Pack[T] with PackProduct[T] =
     def packElement(elem: Pack[_])(x: Any, b: ByteBuffer): Unit =
       elem.asInstanceOf[Pack[Any]].pack(x, b)
 
     def unpackElement(elem: Pack[_])(index: Int, b: IArray[Byte]): Any =
       elem.asInstanceOf[Pack[Any]].unpack(index, b)
-
-    val indexValue =
-      val sizes = elems.map(_.size)
-      IArray.tabulate(sizes.length): x =>
-        sizes.take(x).sum
 
     def iterator[T](p: T) = p.asInstanceOf[Product].productIterator
 
@@ -128,16 +125,18 @@ object Pack:
 
         p.fromProduct(recurse(EmptyTuple, index, 0))
 
-      inline def index: IArray[Int] = indexValue
+      inline def index(i: Int): Int = elems.map(_.size).take(i).sum
 
-  inline def summonAll[T <: Tuple]: List[Pack[_]] =
+  inline def summonAll[T <: Tuple](buffer: mutable.ArrayBuffer[Pack[_]]): Array[Pack[_]] =
     inline erasedValue[T] match
-      case _: EmptyTuple => Nil
-      case _: (t *: ts) => summonInline[Pack[t]] :: summonAll[ts]
+      case _: EmptyTuple => buffer.toArray
+      case _: (t *: ts) =>
+        buffer.addOne(summonInline[Pack[t]])
+        summonAll[ts](buffer)
 
   inline given derived[T](using m: Mirror.ProductOf[T]): PackProduct[T] =
-    lazy val elemInstances = summonAll[m.MirroredElemTypes].toArray
-    packProduct(m, elemInstances)
+    lazy val elems = summonAll[m.MirroredElemTypes](new mutable.ArrayBuffer[Pack[_]](100))
+    packProduct(m, elems)
 
 trait Pack[T]:
   def pack(t: T, buffer: ByteBuffer): Unit
@@ -145,4 +144,4 @@ trait Pack[T]:
   def unpack(index: Int, b: IArray[Byte]): T
 
 trait PackProduct[T] extends Pack[T]:
-  def index: IArray[Int]
+  def index(i: Int): Int
