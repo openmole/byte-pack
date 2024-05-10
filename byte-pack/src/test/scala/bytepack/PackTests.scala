@@ -35,7 +35,7 @@ class PackTests extends AnyFunSuite:
     val packed = Pack.pack(p)
 
     assert(p == Pack.unpack[UpperClass](packed))
-    assert(Pack.unpack[UpperClass](packed, _.j) == 8.toByte)
+    assert(Pack.unpack[UpperClass](_.j)(packed) == 8.toByte)
 
   test("Index should be correct"):
     import PackTests.*

@@ -100,7 +100,7 @@ object FieldIndex:
 
 
   class MkUnpackField[From]:
-    transparent inline def apply[To](b: IArray[Byte], inline lambda: From => To): To = ${ unpackFieldImpl[From, To]('{lambda}, '{b}) }
+    transparent inline def apply[To](inline lambda: From => To)(inline b: IArray[Byte]): To = ${ unpackFieldImpl[From, To]('{lambda}, '{b}) }
 
 
   def unpackFieldImpl[F, T](f: Expr[F => T], b: Expr[IArray[Byte]])(using quotes: Quotes, tpef: Type[F], tpeT: Type[T]): Expr[T] =
