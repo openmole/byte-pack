@@ -33,7 +33,7 @@ case class Nested(test: Test, i: Double) derives Pack
 val netesd = Nested(test, 8.0)
 
 val nestedPacked: IArray[Byte] = Pack.pack(nested)
-Pack.unpack[Nested](_.test._i)(nestedPacked)
+Pack.unpack[Nested](_.test.i)(nestedPacked)
 
 ```
 
