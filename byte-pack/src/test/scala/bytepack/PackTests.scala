@@ -20,6 +20,8 @@ package bytepack
 
 import org.scalatest.funsuite.AnyFunSuite
 
+import java.nio.ByteBuffer
+
 object PackTests:
   enum En derives EnumMirror :
     case V1, V2
@@ -28,7 +30,12 @@ object PackTests:
   case class UpperClass(testClass: TestClass, j: Byte)
 
 class PackTests extends AnyFunSuite:
-  
+
+  test("BytePack should work"):
+    val buffer = ByteBuffer.allocate(4)
+    buffer.putFloat(9.0)
+    assert(BytePack.extractFloat(IArray.unsafeFromArray(buffer.array())) == 9.0f)
+
   test("Packing and unpacking should return the same case class"):
     import PackTests.*
     val p = UpperClass(TestClass(9, 8.0, En.V2, None, Some(En.V1)), 8.toByte)
