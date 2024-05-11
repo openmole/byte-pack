@@ -37,7 +37,7 @@ object Pack:
   given Pack[Short] with
     def pack(i: Short, b: java.nio.ByteBuffer) = b.putShort(i)
     def size = 2
-    def unpack(index: Int, b: IArray[Byte]) = BytePack.extractShort(b, index)
+    inline def unpack(index: Int, b: IArray[Byte]) = BytePack.extractShort(b, index)
 
   given Pack[Int] with
     def pack(i: Int, b: java.nio.ByteBuffer) = b.putInt(i)

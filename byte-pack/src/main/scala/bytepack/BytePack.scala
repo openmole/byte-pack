@@ -48,8 +48,8 @@ object BytePack:
 //    fillBytes(4, IArray.unsafeFromArray(buff.array()))
 
   inline def extractByte(inline b: IArray[Byte], inline index: Int = 0) = b(index)
-  inline def extractShort(inline b: IArray[Byte], inline index: Int = 0) = ByteBuffer.wrap(Array[Byte](b(index), b(index + 1))).getShort
-  inline def extractInt(inline b: IArray[Byte], inline index: Int = 0) = ByteBuffer.wrap(Array[Byte](b(index), b(index + 1), b(index + 2), b(index + 3))).getInt
+  inline def extractShort(inline b: IArray[Byte], inline index: Int = 0) = (((b(index) & 0xFF) << 8) | (b(index + 1) & 0xFF)).asInstanceOf[Short]
+  inline def extractInt(inline b: IArray[Byte], inline index: Int = 0) = (b(index) << 24) & 0xff000000 | (b(index + 1) << 16) & 0x00ff0000 | (b(index + 2) << 8) & 0x0000ff00 | (b(index + 3) << 0) & 0x000000ff
   inline def extractFloat(inline b: IArray[Byte], inline index: Int = 0) = ByteBuffer.wrap(Array[Byte](b(index), b(index + 1), b(index + 2), b(index + 3))).getFloat
   inline def extractDouble(inline b: IArray[Byte], inline index: Int = 0) = ByteBuffer.wrap(Array[Byte](b(index), b(index + 1), b(index + 2), b(index + 3), b(index + 4), b(index + 5), b(index + 6), b(index + 7))).getDouble
   inline def extractLong(inline b: IArray[Byte], inline index: Int = 0) = ByteBuffer.wrap(Array[Byte](b(index), b(index + 1), b(index + 2), b(index + 3), b(index + 4), b(index + 5), b(index + 6), b(index + 7))).getLong

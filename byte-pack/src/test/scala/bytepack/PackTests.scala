@@ -28,7 +28,7 @@ object PackTests:
   case class UpperClass(testClass: TestClass, j: Byte)
 
 class PackTests extends AnyFunSuite:
-
+  
   test("Packing and unpacking should return the same case class"):
     import PackTests.*
     val p = UpperClass(TestClass(9, 8.0, En.V2, None, Some(En.V1)), 8.toByte)
