@@ -23,6 +23,7 @@ import scala.deriving.*
 import scala.compiletime.*
 import java.nio.ByteBuffer
 import reflect.Selectable.reflectiveSelectable
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -99,13 +100,13 @@ object Pack:
 
 
   def packProduct[T](p: Mirror.ProductOf[T], elems: => Array[Pack[_]]): Pack[T] with PackProduct[T] =
-    def packElement(elem: Pack[_])(x: Any, b: ByteBuffer): Unit =
+    inline def packElement(elem: Pack[_])(x: Any, b: ByteBuffer): Unit =
       elem.asInstanceOf[Pack[Any]].pack(x, b)
 
-    def unpackElement(elem: Pack[_])(index: Int, b: IArray[Byte]): Any =
+    inline def unpackElement(elem: Pack[_])(index: Int, b: IArray[Byte]): Any =
       elem.asInstanceOf[Pack[Any]].unpack(index, b)
 
-    def iterator[T](p: T) = p.asInstanceOf[Product].productIterator
+    inline def iterator[T](p: T) = p.asInstanceOf[Product].productIterator
 
     lazy val indexValue =
       val sizes = elems.map(_.size)
@@ -120,12 +121,13 @@ object Pack:
       lazy val size = elems.map(_.size).sum
 
       def unpack(index: Int, b: IArray[Byte]): T =
-        def recurse(tuple: Tuple, index: Int, elemIndex: Int): Tuple =
-          if elemIndex >= elems.length
+        val length = elems.length
+        @tailrec def recurse(tuple: Tuple, index: Int, elemIndex: Int): Tuple =
+          if elemIndex >= length
           then tuple
           else
-            val res = unpackElement(elems(elemIndex))(index, b)
             val h = elems(elemIndex)
+            val res = unpackElement(h)(index, b)
             recurse(tuple :* res, index + h.size, elemIndex + 1)
 
         p.fromProduct(recurse(EmptyTuple, index, 0))
