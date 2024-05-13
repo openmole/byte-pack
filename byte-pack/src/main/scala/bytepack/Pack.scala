@@ -17,7 +17,7 @@ package bytepack
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import bytepack.FieldIndex.{MkFieldIndex, MkModifyField, MkUnpackField}
+import bytepack.FieldIndex.*
 
 import scala.deriving.*
 import scala.compiletime.*
@@ -78,11 +78,9 @@ object Pack:
         case -1 => None
         case v => Some(mirror.fromOrdinal(v).get)
 
-
-  def pack[T: Pack](t: T): IArray[Byte] =
-    val p = summon[Pack[T]]
-    val buff = ByteBuffer.allocate(p.size)
-    p.pack(t, buff)
+  def pack[T](t: T)(using packT: Pack[T]): IArray[Byte] =
+    val buff = java.nio.ByteBuffer.allocate(packT.size)
+    packT.pack(t, buff)
     IArray.unsafeFromArray(buff.array())
 
   def unpack[T: Pack](b: IArray[Byte])(using m: Mirror.ProductOf[T]): T =

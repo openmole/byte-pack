@@ -1,6 +1,6 @@
 package bytepack
 
-import bytepack.Pack.{Mutation, UnpackField, UnsetModifier}
+import bytepack.Pack.*
 
 /*
  * Copyright (C) 2024 Romain Reuillon
@@ -43,6 +43,7 @@ object FieldIndex:
     '{ $namesExpr.toMap }
 
 
+
   class MkFieldIndex[From]:
     transparent inline def apply[To](inline lambda: From => To): Int = ${ fieldIndexImpl[From, To]('{lambda}) }
 
@@ -77,7 +78,7 @@ object FieldIndex:
       case 3 => '{ ${codes(0)} + ${codes(1)} + ${codes(2)} }
       case 4 => '{ ${codes(0)} + ${codes(1)} + ${codes(2)} + ${codes(3)} }
       case _ => '{ ${Expr.ofSeq(codes)}.sum }
-      
+
 
   class MkUnpackField[From]:
     transparent inline def apply[To](inline lambda: From => To): UnpackField[To] = ${ unpackFieldImpl[From, To]('{lambda}) }
@@ -90,7 +91,7 @@ object FieldIndex:
     val packT =
       Expr.summon[Pack[T]] match
         case Some(p) => p
-        case None => report.errorAndAbort(s"Not found Pack for type ${tpeT}", f.asTerm.pos)
+        case None => report.errorAndAbort(s"Not found Pack for type ${tpeT}")
 
     '{
       val index = Pack.indexOf[F]($f)
@@ -125,10 +126,12 @@ object FieldIndex:
         case None => report.errorAndAbort(s"Not found Pack for type ${tpeT}", f.asTerm.pos)
 
     '{
+      given packTValue: Pack[T] = ${packT}
       val index = Pack.indexOf[F]($f)
+      val packer= Pack.pack[T]
       new UnsetModifier[T]:
         def set(t: T): Mutation =
-          val packedT = IArray.toArray(Pack.pack[T](t)(using $packT))
+          val packedT = IArray.toArray(packer(t))
           (b: Array[Byte]) => System.arraycopy(packedT, 0, b, index, packedT.length)
     }
 
