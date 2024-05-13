@@ -57,3 +57,16 @@ class PackTests extends AnyFunSuite:
     assert(Pack.indexOf[UpperClass](1) == 11)
     assert(packed(Pack.indexOf[UpperClass](1)) == 8.toByte)
     assert(Pack.indexOf[UpperClass](_.j) == 11)
+
+  test("Modify should work"):
+    import PackTests.*
+    val p = UpperClass(TestClass(9, 8.0, En.V2, None, Some(En.V1)), 8.toByte)
+    val packed = Pack.pack(p)
+
+    val modifyX = Pack.modifier[UpperClass](_.testClass.x)
+    val modifyJ = Pack.modifier[UpperClass](_.j)
+
+    val newPacked = Pack.modify(packed, modifyX.set(20.0f), modifyJ.set(100.toByte))
+
+    assert(Pack.unpack[UpperClass](packed) == p)
+    assert(Pack.unpack[UpperClass](newPacked) == p.copy(testClass = p.testClass.copy(x = 20.0f), j = 100.toByte))

@@ -1,5 +1,7 @@
 package bytepack
 
+import bytepack.Pack.{Mutation, UnsetModifier}
+
 /*
  * Copyright (C) 2024 Romain Reuillon
  *
@@ -41,12 +43,10 @@ object FieldIndex:
     '{ $namesExpr.toMap }
 
 
-
   class MkFieldIndex[From]:
     transparent inline def apply[To](inline lambda: From => To): Int = ${ fieldIndexImpl[From, To]('{lambda}) }
 
 //  inline def fieldIndex[F](f: F => Any): Int = ${ fieldIndexImpl[F]('{f}) }
-
 
 
   def fieldIndexImpl[F, T](f: Expr[F => T])(using quotes: Quotes, tpef: Type[F]): Expr[Int] =
@@ -63,90 +63,8 @@ object FieldIndex:
       case Block(l, _) => l.flatMap(t => recur(t, selects))
       case _ => List()
 
-    def getFieldType(fromType: TypeRepr, fieldName: String): TypeRepr =
-      def getClassSymbol(tpe: TypeRepr): Symbol = tpe.classSymbol match
-        case Some(sym) => sym
-        case None => report.errorAndAbort(s"${tpe} is not a concrete type")
-
-
-      // We need to do this to support tuples, because even though they conform as case classes in other respects,
-      // for some reason their field names (_1, _2, etc) have a space at the end, ie `_1 `.
-      def getTrimmedFieldSymbol(fromTypeSymbol: Symbol): Symbol =
-        fromTypeSymbol.memberFields.find(_.name.trim == fieldName).getOrElse(Symbol.noSymbol)
-
-      object FieldType:
-        def unapply(fieldSymbol: Symbol): Option[TypeRepr] = fieldSymbol match
-          case sym if sym.isNoSymbol => None
-          case sym =>
-            sym.tree match
-              case ValDef(_, typeTree, _) => Some(typeTree.tpe)
-              case _ => None
-
-      def swapWithSuppliedType(fromType: TypeRepr, possiblyContainsTypeArgs: TypeRepr): TypeRepr =
-        val declared = getDeclaredTypeArgs(fromType)
-        val supplied = getSuppliedTypeArgs(fromType)
-        val swapDict = declared.view.map(_.name).zip(supplied).toMap
-
-        def swapInto(candidate: TypeRepr): TypeRepr =
-          candidate match
-            case AppliedType(typeCons, args) => swapInto(typeCons).appliedTo(args.map(swapInto))
-            case leafType => swapDict.getOrElse(leafType.typeSymbol.name, leafType)
-
-        swapInto(possiblyContainsTypeArgs)
-
-      def getDeclaredTypeArgs(classType: TypeRepr): List[Symbol] =
-        classType.classSymbol.map(_.primaryConstructor.paramSymss) match
-          case Some(typeParamList :: _) if typeParamList.exists(_.isTypeParam) => typeParamList
-          case _ => Nil
-
-      def getSuppliedTypeArgs(fromType: TypeRepr): List[TypeRepr] =
-        fromType match
-          case AppliedType(_, argTypeReprs) => argTypeReprs
-          case _ => Nil
-
-      val fromTypeSymbol = getClassSymbol(fromType)
-      getTrimmedFieldSymbol(fromTypeSymbol) match
-        case FieldType(possiblyTypeArg) => swapWithSuppliedType(fromType, possiblyTypeArg)
-        case _ => report.errorAndAbort(s"Couldn't find field type ${fromType.show} $fieldName)")
-
-
-
 //    println(f.asTerm.show(using Printer.TreeStructure))
 //    println(recur(f.asTerm, List()))
-
-
-
-    def fieldIndex(tpe: TypeRepr, fieldNames: List[String], acc: List[Expr[Int]]): List[Expr[Int]] =
-      fieldNames match
-        case Nil => acc.reverse
-        case fieldName :: tail =>
-          val packProduct =
-            tpe.asType match
-              case '[t] =>
-                Expr.summon[PackProduct[t]]
-
-          val index =
-            tpe.typeSymbol.caseFields.zipWithIndex.find((f, _) => f.name == fieldName) match
-              case Some(f) => f._2 //if p.flags.is(Flags.HasDefault)
-              case None => report.errorAndAbort(s"No field named ${fieldName} found in case class ${tpe}")
-
-          //   val field = source.head.dropWhile(_ != '.').drop(1)
-
-          val v = Expr(index)
-
-
-          val code =
-            tpe.asType match
-              case '[t] =>
-                Expr.summon[PackProduct[t]] match
-                  case Some(pack) =>
-                    '{
-                      Pack.indexOf[t]($v)(using $pack)
-                    }
-                  case None => report.errorAndAbort(s"No PackProduct type class defined for $tpe")
-
-          val fieldType = getFieldType(tpe, fieldName)
-          fieldIndex(fieldType, tail, code :: acc)
 
     val selects = recur(f.asTerm, List())
 
@@ -159,30 +77,6 @@ object FieldIndex:
       case 3 => '{ ${codes(0)} + ${codes(1)} + ${codes(2)} }
       case 4 => '{ ${codes(0)} + ${codes(1)} + ${codes(2)} + ${codes(3)} }
       case _ => '{ ${Expr.ofSeq(codes)}.sum }
-
-//    if selects.size != 1 then report.errorAndAbort("Only one level of case class is supported for now", f.asTerm.pos)
-//
-//    val field = selects.head //source.head.dropWhile(_ != '.').drop(1)
-//    val sym = TypeRepr.of[F].typeSymbol
-//
-//
-//    val index =
-//      sym.caseFields.zipWithIndex.find((f, _) => f.name == field) match
-//        case Some(f) => f._2 //if p.flags.is(Flags.HasDefault)
-//        case None => report.errorAndAbort(s"No field named ${field} found in case class ${sym}", f.asTerm.pos)
-//
-//    //   val field = source.head.dropWhile(_ != '.').drop(1)
-//
-//    val v = Expr(index)
-//    val pack =
-//      Expr.summon[PackProduct[F]] match
-//        case Some(p) => p
-//        case None => report.errorAndAbort(s"Not found PackProduct for type ${sym}", f.asTerm.pos)
-//
-//    '{
-//      Pack.indexOf[F]($v)(using $pack)
-//    }
-
 
 
 
@@ -216,3 +110,108 @@ object FieldIndex:
 //      Expr.ofList(idents.map(_.asExpr))
 //
 //    '{ $namesExpr.zip($identsExpr).toMap }
+
+  class MkModifyField[From]:
+    transparent inline def apply[To](inline lambda: From => To): UnsetModifier[To] = ${ modifyFieldImpl[From, To]('{ lambda }) }
+
+
+  def modifyFieldImpl[F, T](f: Expr[F => T])(using quotes: Quotes, tpef: Type[F], tpeT: Type[T]): Expr[UnsetModifier[T]] =
+    import quotes.*
+    import quotes.reflect.*
+
+    val packT =
+      Expr.summon[Pack[T]] match
+        case Some(p) => p
+        case None => report.errorAndAbort(s"Not found Pack for type ${tpeT}", f.asTerm.pos)
+
+    '{
+      val index = Pack.indexOf[F]($f)
+      new UnsetModifier[T]:
+        def set(t: T): Mutation =
+          val packedT = IArray.toArray(Pack.pack[T](t)(using $packT))
+          (b: Array[Byte]) => System.arraycopy(packedT, 0, b, index, packedT.length)
+    }
+
+  def fieldIndex(using quotes: Quotes)(tpe: quotes.reflect.TypeRepr, fieldNames: List[String], acc: List[Expr[Int]]): List[Expr[Int]] =
+    import quotes.*
+    import quotes.reflect.*
+
+    fieldNames match
+      case Nil => acc.reverse
+      case fieldName :: tail =>
+        val packProduct =
+          tpe.asType match
+            case '[t] =>
+              Expr.summon[PackProduct[t]]
+
+        val index =
+          tpe.typeSymbol.caseFields.zipWithIndex.find((f, _) => f.name == fieldName) match
+            case Some(f) => f._2 //if p.flags.is(Flags.HasDefault)
+            case None => report.errorAndAbort(s"No field named ${fieldName} found in case class ${tpe}")
+
+        //   val field = source.head.dropWhile(_ != '.').drop(1)
+
+        val v = Expr(index)
+
+
+        val code =
+          tpe.asType match
+            case '[t] =>
+              Expr.summon[PackProduct[t]] match
+                case Some(pack) =>
+                  '{
+                    Pack.indexOf[t]($v)(using $pack)
+                  }
+                case None => report.errorAndAbort(s"No PackProduct type class defined for $tpe")
+
+        val fieldType = getFieldType(tpe, fieldName)
+        fieldIndex(fieldType, tail, code :: acc)
+
+  def getFieldType(using quotes: Quotes)(fromType: quotes.reflect.TypeRepr, fieldName: String): quotes.reflect.TypeRepr =
+    import quotes.*
+    import quotes.reflect.*
+    def getClassSymbol(tpe: TypeRepr): Symbol = tpe.classSymbol match
+      case Some(sym) => sym
+      case None => report.errorAndAbort(s"${tpe} is not a concrete type")
+
+
+    // We need to do this to support tuples, because even though they conform as case classes in other respects,
+    // for some reason their field names (_1, _2, etc) have a space at the end, ie `_1 `.
+    def getTrimmedFieldSymbol(fromTypeSymbol: Symbol): Symbol =
+      fromTypeSymbol.memberFields.find(_.name.trim == fieldName).getOrElse(Symbol.noSymbol)
+
+    object FieldType:
+      def unapply(fieldSymbol: Symbol): Option[TypeRepr] = fieldSymbol match
+        case sym if sym.isNoSymbol => None
+        case sym =>
+          sym.tree match
+            case ValDef(_, typeTree, _) => Some(typeTree.tpe)
+            case _ => None
+
+    def swapWithSuppliedType(fromType: TypeRepr, possiblyContainsTypeArgs: TypeRepr): TypeRepr =
+      val declared = getDeclaredTypeArgs(fromType)
+      val supplied = getSuppliedTypeArgs(fromType)
+      val swapDict = declared.view.map(_.name).zip(supplied).toMap
+
+      def swapInto(candidate: TypeRepr): TypeRepr =
+        candidate match
+          case AppliedType(typeCons, args) => swapInto(typeCons).appliedTo(args.map(swapInto))
+          case leafType => swapDict.getOrElse(leafType.typeSymbol.name, leafType)
+
+      swapInto(possiblyContainsTypeArgs)
+
+    def getDeclaredTypeArgs(classType: TypeRepr): List[Symbol] =
+      classType.classSymbol.map(_.primaryConstructor.paramSymss) match
+        case Some(typeParamList :: _) if typeParamList.exists(_.isTypeParam) => typeParamList
+        case _ => Nil
+
+    def getSuppliedTypeArgs(fromType: TypeRepr): List[TypeRepr] =
+      fromType match
+        case AppliedType(_, argTypeReprs) => argTypeReprs
+        case _ => Nil
+
+    val fromTypeSymbol = getClassSymbol(fromType)
+    getTrimmedFieldSymbol(fromTypeSymbol) match
+      case FieldType(possiblyTypeArg) => swapWithSuppliedType(fromType, possiblyTypeArg)
+      case _ => report.errorAndAbort(s"Couldn't find field type ${fromType.show} $fieldName)")
+

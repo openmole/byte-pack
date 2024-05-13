@@ -17,7 +17,7 @@ package bytepack
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import bytepack.FieldIndex.{MkFieldIndex, MkUnpackField}
+import bytepack.FieldIndex.{MkFieldIndex, MkModifyField, MkUnpackField}
 
 import scala.deriving.*
 import scala.compiletime.*
@@ -97,6 +97,19 @@ object Pack:
   //inline def fieldName[F](inline f: F => Any) = FieldIndex.fieldName(f)
 
   def size[T: Pack] = summon[Pack[T]].size
+
+
+  type Mutation = Array[Byte] => Unit
+  trait UnsetModifier[T]:
+    def set(v: T): Mutation
+
+  def modifier[From]: MkModifyField[From] = new MkModifyField[From]
+
+  def modify[From](p: IArray[Byte], mutation: Mutation*): IArray[Byte] =
+    val arr = p.toArray
+    mutation.foreach: m =>
+      m(arr)
+    IArray.unsafeFromArray(arr)
 
 
   def packProduct[T](p: Mirror.ProductOf[T], elems: => Array[Pack[_]]): Pack[T] with PackProduct[T] =
