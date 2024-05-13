@@ -7,6 +7,7 @@ Byte Pack is a library to pack and unpack scala case classes into `IArray[Byte]`
 This is intented for:
  - memory hungry application that want to store many case classes into by `Array[Array[Byte]]`
  - application that want to serialize case classes on disk in efficient manner
+ - application that want to manipulate datastructure minimaly stored in Array[Byte] but with a high level syntax
 
 Packing contains no type information, only the data. The classes are unpacked using the static type information derived from the type parameter of the unpack method. 
 
