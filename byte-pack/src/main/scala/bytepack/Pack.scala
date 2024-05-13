@@ -105,7 +105,7 @@ object Pack:
 
   def modifier[From]: MkModifyField[From] = new MkModifyField[From]
 
-  def modify[From](p: IArray[Byte], mutation: Mutation*): IArray[Byte] =
+  def modify(p: IArray[Byte], mutation: Mutation*): IArray[Byte] =
     val arr = p.toArray
     mutation.foreach: m =>
       m(arr)
