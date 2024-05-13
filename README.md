@@ -20,7 +20,7 @@ enum En derives EnumMirror:
 case class Test(i: Int, e: En) derives Pack
 
 // packed length should be 5
-val packed: IArray[Byte] = Pack.pack(Test(1, En.T2)
+val packed: IArray[Byte] = Pack.pack(Test(1, En.E2)
 
 // Unpack the entire case class
 val test: Test = Pack.unpack[Test](packed)
@@ -35,10 +35,15 @@ val netesd = Nested(test, 8.0)
 val nestedPacked: IArray[Byte] = Pack.pack(nested)
 Pack.unpack[Nested](_.test.i)(nestedPacked)
 
+// Efficiently modify some fields without unpacking
+val modifyE = Pack.modifier[Nested](_.test.e)
+val modifyI = Pack.modifier[Nested](_.i)
+
+val newNestedPacked: IArray[Byte] = Pack.modify(nested, modifyE.set(En.E1), modifyI.set(10.0))
 ```
 
 SBT dependency is:
 
 ```
-libraryDependencies += "org.openmole" %% "byte-pack" % "0.5"
+libraryDependencies += "org.openmole" %% "byte-pack" % "0.6"
 ```
