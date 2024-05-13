@@ -89,6 +89,9 @@ object Pack:
     val p = summon[Pack[T]]
     p.unpack(0, b)
 
+  trait UnpackField[To]:
+    def apply(f: IArray[Byte]): To
+
   def unpack[T]: MkUnpackField[T] = new MkUnpackField[T]
 
   inline def indexOf[T: PackProduct](inline i: Int) = summon[PackProduct[T]].index(i)

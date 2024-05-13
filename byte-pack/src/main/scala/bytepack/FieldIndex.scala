@@ -1,6 +1,6 @@
 package bytepack
 
-import bytepack.Pack.{Mutation, UnsetModifier}
+import bytepack.Pack.{Mutation, UnpackField, UnsetModifier}
 
 /*
  * Copyright (C) 2024 Romain Reuillon
@@ -77,14 +77,13 @@ object FieldIndex:
       case 3 => '{ ${codes(0)} + ${codes(1)} + ${codes(2)} }
       case 4 => '{ ${codes(0)} + ${codes(1)} + ${codes(2)} + ${codes(3)} }
       case _ => '{ ${Expr.ofSeq(codes)}.sum }
-
-
+      
 
   class MkUnpackField[From]:
-    transparent inline def apply[To](inline lambda: From => To)(inline b: IArray[Byte]): To = ${ unpackFieldImpl[From, To]('{lambda}, '{b}) }
+    transparent inline def apply[To](inline lambda: From => To): UnpackField[To] = ${ unpackFieldImpl[From, To]('{lambda}) }
 
 
-  def unpackFieldImpl[F, T](f: Expr[F => T], b: Expr[IArray[Byte]])(using quotes: Quotes, tpef: Type[F], tpeT: Type[T]): Expr[T] =
+  def unpackFieldImpl[F, T](f: Expr[F => T])(using quotes: Quotes, tpef: Type[F], tpeT: Type[T]): Expr[UnpackField[T]] =
     import quotes.*
     import quotes.reflect.*
 
@@ -95,7 +94,8 @@ object FieldIndex:
 
     '{
       val index = Pack.indexOf[F]($f)
-      ${packT}.unpack(index, $b)
+      new UnpackField[T]:
+        def apply(b: IArray[Byte]) = ${packT}.unpack(index, b)
     }
 
 
