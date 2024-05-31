@@ -66,7 +66,8 @@ class PackTests extends AnyFunSuite:
     val modifyX = Pack.modifier[UpperClass](_.testClass.x)
     val modifyJ = Pack.modifier[UpperClass](_.j)
 
-    val newPacked = Pack.modify(packed, modifyX.set(20.0f), modifyJ.set(100.toByte))
+    val newPacked = Pack.modify(packed, modifyX.set(20.0f), modifyJ.set(50.toByte), modifyJ.modify(x => (x * 2).toByte))
+
 
     assert(Pack.unpack[UpperClass](packed) == p)
     assert(Pack.unpack[UpperClass](newPacked) == p.copy(testClass = p.testClass.copy(x = 20.0f), j = 100.toByte))

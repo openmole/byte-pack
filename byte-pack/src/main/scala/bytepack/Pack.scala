@@ -103,6 +103,7 @@ object Pack:
   type Mutation = Array[Byte] => Unit
   trait UnsetModifier[T]:
     def set(v: T): Mutation
+    def modify(f: T => T): Mutation
 
   def modifier[From]: MkModifyField[From] = new MkModifyField[From]
 

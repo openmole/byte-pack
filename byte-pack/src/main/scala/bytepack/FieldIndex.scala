@@ -128,11 +128,18 @@ object FieldIndex:
     '{
       given packTValue: Pack[T] = ${packT}
       val index = Pack.indexOf[F]($f)
-      val packer= Pack.pack[T]
+      val packer = Pack.pack[T]
+      val unpacker = Pack.unpack[T]
+
       new UnsetModifier[T]:
         def set(t: T): Mutation =
           val packedT = IArray.toArray(packer(t))
-          (b: Array[Byte]) => System.arraycopy(packedT, 0, b, index, packedT.length)
+          (b: Array[Byte]) => System.arraycopy(packedT, 0, b, index, packTValue.size)
+        def modify(f: T => T): Mutation =
+          (b: Array[Byte]) =>
+            val unpackT = packTValue.unpack(index, IArray.unsafeFromArray(b))
+            val packedT = IArray.toArray(packer(f(unpackT)))
+            System.arraycopy(packedT, 0, b, index, packTValue.size)
     }
 
   def fieldIndex(using quotes: Quotes)(tpe: quotes.reflect.TypeRepr, fieldNames: List[String], acc: List[Expr[Int]]): List[Expr[Int]] =
