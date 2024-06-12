@@ -99,8 +99,14 @@ object Pack:
 
   def size[T: Pack] = summon[Pack[T]].size
 
+  object Mutation:
+    inline given Conversion[Array[Byte] => Unit, Mutation] = identity
 
-  type Mutation = Array[Byte] => Unit
+  opaque type Mutation = Array[Byte] => Unit
+
+  extension (m: Mutation)
+    def apply(p: IArray[Byte]) = modify(p, m)
+
   trait UnsetModifier[T]:
     def set(v: T): Mutation
     def modify(f: T => T): Mutation
