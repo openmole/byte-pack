@@ -30,3 +30,7 @@ object PackLens:
 
 object PackIso:
   inline def apply[T](using p: Pack[T]) = Iso[T, IArray[Byte]](Pack.pack[T])(Pack.unpack[T])
+
+extension (p: Pack.type)
+  transparent inline def lens[From] = PackLens.apply[From]
+  transparent inline def iso[T: Pack] = PackIso.apply[T]

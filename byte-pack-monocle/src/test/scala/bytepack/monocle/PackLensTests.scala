@@ -23,6 +23,8 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.ByteBuffer
 
+import bytepack.*
+
 object PackLensTests:
   enum En derives EnumMirror:
     case V1, V2
@@ -36,7 +38,7 @@ class PackLensTests extends AnyFunSuite:
     import PackLensTests.*
     val p = UpperClass(TestClass(9, 8.0, En.V2, None, Some(En.V1)), 8.toByte)
 
-    val iso = PackIso[UpperClass]
+    val iso = Pack.iso[UpperClass]
 
     val packed: IArray[Byte] = iso.get(p)
     assert(p == iso.reverse.get(packed))
@@ -47,6 +49,6 @@ class PackLensTests extends AnyFunSuite:
     val p = UpperClass(TestClass(9, 8.0, En.V2, None, Some(En.V1)), 8.toByte)
 
     val packed = bytepack.Pack.pack(p)
-    val lens = PackLens[UpperClass](_.testClass.x)
+    val lens = Pack.lens[UpperClass](_.testClass.x)
     assert(lens.get(packed) == 8.0)
 
