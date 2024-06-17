@@ -87,15 +87,8 @@ object Pack:
     val p = summon[Pack[T]]
     p.unpack(0, b)
 
-  trait UnpackField[To]:
-    def apply(f: IArray[Byte]): To
-
-  def unpack[T]: MkUnpackField[T] = new MkUnpackField[T]
-
   inline def indexOf[T: PackProduct](inline i: Int) = summon[PackProduct[T]].index(i)
   def indexOf[From]: MkFieldIndex[From] = new MkFieldIndex[From]() //${ FieldIndex.fieldIndexImpl[F]('{ f }) }
-
-  //inline def fieldName[F](inline f: F => Any) = FieldIndex.fieldName(f)
 
   def size[T: Pack] = summon[Pack[T]].size
 
@@ -107,11 +100,12 @@ object Pack:
   extension (m: Mutation)
     def apply(p: IArray[Byte]) = modify(p, m)
 
-  trait UnsetModifier[T]:
+  trait Accessor[T]:
     def set(v: T): Mutation
     def modify(f: T => T): Mutation
+    def get: Get[T]
 
-  def modifier[From]: MkModifyField[From] = new MkModifyField[From]
+  def access[From]: MkAccessorField[From] = new MkAccessorField[From]
 
   def modify(p: IArray[Byte], mutation: Mutation*): IArray[Byte] =
     val arr = p.toArray
@@ -119,6 +113,13 @@ object Pack:
       m(arr)
     IArray.unsafeFromArray(arr)
 
+  object Get:
+    inline given [T]: Conversion[IArray[Byte] => T, Get[T]] = identity
+
+  opaque type Get[T] = IArray[Byte] => T
+
+  extension [T](a: Get[T])
+    def apply(h: IArray[Byte]) = a(h)
 
   def packProduct[T](p: Mirror.ProductOf[T], elems: => Array[Pack[_]]): Pack[T] with PackProduct[T] =
     inline def packElement(elem: Pack[_])(x: Any, b: ByteBuffer): Unit =

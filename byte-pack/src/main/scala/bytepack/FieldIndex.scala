@@ -79,44 +79,10 @@ object FieldIndex:
       case 4 => '{ ${codes(0)} + ${codes(1)} + ${codes(2)} + ${codes(3)} }
       case _ => '{ ${Expr.ofSeq(codes)}.sum }
 
+  class MkAccessorField[From]:
+    transparent inline def apply[To](inline lambda: From => To): Accessor[To] = ${ modifyFieldImpl[From, To]('{ lambda }) }
 
-  class MkUnpackField[From]:
-    transparent inline def apply[To](inline lambda: From => To): UnpackField[To] = ${ unpackFieldImpl[From, To]('{lambda}) }
-
-
-  def unpackFieldImpl[F, T](f: Expr[F => T])(using quotes: Quotes, tpef: Type[F], tpeT: Type[T]): Expr[UnpackField[T]] =
-    import quotes.*
-    import quotes.reflect.*
-
-    val packT =
-      Expr.summon[Pack[T]] match
-        case Some(p) => p
-        case None => report.errorAndAbort(s"Not found Pack for type ${tpeT}")
-
-    '{
-      val index = Pack.indexOf[F]($f)
-      new UnpackField[T]:
-        def apply(b: IArray[Byte]) = ${packT}.unpack(index, b)
-    }
-
-
-//
-//    val body = comp.tree.asInstanceOf[ClassDef].body
-//    val idents: List[Term] =
-//      for case deff@DefDef(name, _, _, _) <- body
-//          if name.startsWith("$lessinit$greater$default")
-//      yield mod.select(deff.symbol).appliedToTypes(typeArgs)
-//
-//    val identsExpr: Expr[List[Any]] =
-//      Expr.ofList(idents.map(_.asExpr))
-//
-//    '{ $namesExpr.zip($identsExpr).toMap }
-
-  class MkModifyField[From]:
-    transparent inline def apply[To](inline lambda: From => To): UnsetModifier[To] = ${ modifyFieldImpl[From, To]('{ lambda }) }
-
-
-  def modifyFieldImpl[F, T](f: Expr[F => T])(using quotes: Quotes, tpef: Type[F], tpeT: Type[T]): Expr[UnsetModifier[T]] =
+  def modifyFieldImpl[F, T](f: Expr[F => T])(using quotes: Quotes, tpef: Type[F], tpeT: Type[T]): Expr[Accessor[T]] =
     import quotes.*
     import quotes.reflect.*
 
@@ -129,17 +95,18 @@ object FieldIndex:
       given packTValue: Pack[T] = ${packT}
       val index = Pack.indexOf[F]($f)
       val packer = Pack.pack[T]
-      val unpacker = Pack.unpack[T]
-
-      new UnsetModifier[T]:
+    
+      new Accessor[T]:
         def set(t: T): Mutation =
           val packedT = IArray.toArray(packer(t))
           (b: Array[Byte]) => System.arraycopy(packedT, 0, b, index, packTValue.size)
+        def get: Get[T] = b => packTValue.unpack(index, b)
         def modify(f: T => T): Mutation =
           (b: Array[Byte]) =>
             val unpackT = packTValue.unpack(index, IArray.unsafeFromArray(b))
             val packedT = IArray.toArray(packer(f(unpackT)))
             System.arraycopy(packedT, 0, b, index, packTValue.size)
+
     }
 
   def fieldIndex(using quotes: Quotes)(tpe: quotes.reflect.TypeRepr, fieldNames: List[String], acc: List[Expr[Int]]): List[Expr[Int]] =

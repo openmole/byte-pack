@@ -42,13 +42,13 @@ class PackTests extends AnyFunSuite:
     val packed = Pack.pack(p)
 
     assert(p == Pack.unpack[UpperClass](packed))
-    assert(Pack.unpack[UpperClass](_.j)(packed) == 8.toByte)
+    assert(Pack.access[UpperClass](_.j).get(packed) == 8.toByte)
 
-    def unpackMethod = Pack.unpack[UpperClass](_.j)
+    def unpackMethod = Pack.access[UpperClass](_.j).get
     assert(unpackMethod(packed) == 8.toByte)
 
-    assert(Pack.unpack[UpperClass](_.testClass.i)(packed) == 9)
-    assert(Pack.unpack[UpperClass](_.testClass.x)(packed) == 8.0)
+    assert(Pack.access[UpperClass](_.testClass.i).get(packed) == 9)
+    assert(Pack.access[UpperClass](_.testClass.x).get(packed) == 8.0)
 
   test("Index should be correct"):
     import PackTests.*
@@ -63,8 +63,8 @@ class PackTests extends AnyFunSuite:
     val p = UpperClass(TestClass(9, 8.0, En.V2, None, Some(En.V1)), 8.toByte)
     val packed = Pack.pack(p)
 
-    val modifyX = Pack.modifier[UpperClass](_.testClass.x)
-    val modifyJ = Pack.modifier[UpperClass](_.j)
+    val modifyX = Pack.access[UpperClass](_.testClass.x)
+    val modifyJ = Pack.access[UpperClass](_.j)
 
     val newPacked = Pack.modify(packed, modifyX.set(20.0f), modifyJ.set(50.toByte), modifyJ.modify(x => (x * 2).toByte))
 

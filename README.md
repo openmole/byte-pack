@@ -27,24 +27,24 @@ val packed: IArray[Byte] = Pack.pack(Test(1, En.E2)
 val test: Test = Pack.unpack[Test](packed)
 
 // Unpack single field for efficiency
-Pack.unpack[Test](_.e)(packed)
+Pack.access[Test](_.e).get(packed)
 
 // Work with nested case classes
 case class Nested(test: Test, i: Double) derives Pack
 val netesd = Nested(test, 8.0)
 
 val nestedPacked: IArray[Byte] = Pack.pack(nested)
-Pack.unpack[Nested](_.test.i)(nestedPacked)
+Pack.access[Nested](_.test.i).get(nestedPacked)
 
 // Efficiently modify some fields without unpacking
-val modifyE = Pack.modifier[Nested](_.test.e)
-val modifyI = Pack.modifier[Nested](_.i)
+val modifyE = Pack.access[Nested](_.test.e)
+val modifyI = Pack.access[Nested](_.i)
 
-val newNestedPacked: IArray[Byte] = Pack.modify(nested, modifyE.set(En.E1), modifyI.set(10.0))
+val newNestedPacked: IArray[Byte] = Pack.modify(nested, modifyE.set(En.E1), modifyI.modify(_ + 10.0))
 ```
 
 SBT dependency is:
 
 ```
-libraryDependencies += "org.openmole" %% "byte-pack" % "0.6"
+libraryDependencies += "org.openmole" %% "byte-pack" % "0.7"
 ```
