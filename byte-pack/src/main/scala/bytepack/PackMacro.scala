@@ -19,7 +19,7 @@ import bytepack.Pack.*
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-object FieldIndex:
+object PackMacro:
   import scala.annotation.experimental
   import scala.quoted.*
   import scala.deriving.*
@@ -43,11 +43,8 @@ object FieldIndex:
     '{ $namesExpr.toMap }
 
 
-
   class MkFieldIndex[From]:
     transparent inline def apply[To](inline lambda: From => To): Int = ${ fieldIndexImpl[From, To]('{lambda}) }
-
-//  inline def fieldIndex[F](f: F => Any): Int = ${ fieldIndexImpl[F]('{f}) }
 
 
   def fieldIndexImpl[F, T](f: Expr[F => T])(using quotes: Quotes, tpef: Type[F]): Expr[Int] =
@@ -95,7 +92,7 @@ object FieldIndex:
       given packTValue: Pack[T] = ${packT}
       val index = Pack.indexOf[F]($f)
       val packer = Pack.pack[T]
-    
+
       new Accessor[T]:
         def set(t: T): Mutation =
           val packedT = IArray.toArray(packer(t))
@@ -150,7 +147,6 @@ object FieldIndex:
     def getClassSymbol(tpe: TypeRepr): Symbol = tpe.classSymbol match
       case Some(sym) => sym
       case None => report.errorAndAbort(s"${tpe} is not a concrete type")
-
 
     // We need to do this to support tuples, because even though they conform as case classes in other respects,
     // for some reason their field names (_1, _2, etc) have a space at the end, ie `_1 `.

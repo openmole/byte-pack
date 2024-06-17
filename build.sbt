@@ -64,3 +64,9 @@ lazy val bytePack =
     libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.11" % Test
   )
 
+lazy val bytePackMonocle =
+  Project(id = "byte-pack-monocle", base = file("byte-pack-monocle")) dependsOn (bytePack) settings(
+    settings,
+    libraryDependencies += "dev.optics" %% "monocle-core"  % "3.2.0",
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.11" % Test
+  )

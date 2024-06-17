@@ -17,7 +17,7 @@ package bytepack
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import bytepack.FieldIndex.*
+import bytepack.PackMacro.*
 
 import scala.deriving.*
 import scala.compiletime.*
@@ -83,7 +83,7 @@ object Pack:
     packT.pack(t, buff)
     IArray.unsafeFromArray(buff.array())
 
-  def unpack[T: Pack](b: IArray[Byte])(using m: Mirror.ProductOf[T]): T =
+  def unpack[T: Pack](b: IArray[Byte]): T =
     val p = summon[Pack[T]]
     p.unpack(0, b)
 
