@@ -60,6 +60,17 @@ object Pack:
     def size = 8
     def unpack(index: Int, b: IArray[Byte]) = BytePack.extractDouble(b, index)
 
+  given Pack[UnsignedByte] with
+    def pack(i: UnsignedByte, b: java.nio.ByteBuffer) = b.put(i.rawValue)
+    def size = 1
+    def unpack(index: Int, b: IArray[Byte]) = UnsignedByte.cast(bytepack.BytePack.extractByte(b, index))
+
+  given Pack[UnsignedShort] with
+    def pack(i: UnsignedShort, b: java.nio.ByteBuffer) = b.putShort(i.rawValue)
+    def size = 2
+    def unpack(index: Int, b: IArray[Byte]) = UnsignedShort.cast(bytepack.BytePack.extractShort(b, index))
+
+
   given [T](using mirror: EnumMirror[T], sm: Mirror.SumOf[T]): Pack[T] with
     def pack(e: T, b: ByteBuffer): Unit = b.put(sm.ordinal(e).toByte)
     def size: Int = 1
