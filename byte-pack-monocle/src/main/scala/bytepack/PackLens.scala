@@ -1,4 +1,4 @@
-package bytepack.monocle
+package bytepack
 
 /*
  * Copyright (C) 2024 Romain Reuillon

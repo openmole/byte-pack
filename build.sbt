@@ -57,8 +57,14 @@ def settings = Seq (
   scalacOptions ++= Seq("-Xtarget:11", "-language:postfixOps")
 )
 
+lazy val bytePackType =
+  Project(id = "byte-pack-type", base = file("byte-pack-types")) settings(
+    settings,
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.11" % Test
+  )
+
 lazy val bytePack =
-  Project(id = "byte-pack", base = file("byte-pack")) settings(
+  Project(id = "byte-pack", base = file("byte-pack")) dependsOn bytePackType settings(
     settings,
     libraryDependencies += "io.github.bishabosha" %% "enum-extensions" % "0.1.1",
     libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.11" % Test
