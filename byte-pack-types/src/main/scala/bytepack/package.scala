@@ -54,6 +54,8 @@ object UnsignedShort:
 opaque type UnsignedShort = Short
 
 object FixedSizeIArray:
+  given [T, Size <: Int]: Conversion[IArray[T], FixedSizeIArray[T, Size]] = identity
+
   inline def apply[Size <: Int] =
     [T] => (a: IArray[T]) => (a: FixedSizeIArray[T, Size])
 
