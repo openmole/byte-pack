@@ -43,8 +43,54 @@ val modifyI = Pack.access[Nested](_.i)
 val newNestedPacked: IArray[Byte] = Pack.modify(nested, modifyE.set(En.E1), modifyI.modify(_ + 10.0))
 ```
 
-SBT dependency is:
+
+Use array operations as follow:
+```scala3
+import bytepack.*
+
+val a = FixedArray[4](IArray(9, 10, 11, 12))
+val packed = Pack.pack(a)
+
+// If you don't know the size a compile time you can do
+// make sure the size is the same between pack and unpack otherwise you will get wrong data
+
+object MyArray:
+  given Conversion[IArray[Int], MyArray] = identity
+  
+opaque type MyArray = IArray[Int]
+
+case class MyClass(v: Int, a: MyArray)
+
+def load(d: IArray[Byte], arraySize: Int): MyClass =
+  given Pack[MyArray] = Pack.immutableArray(arraSize)
+  Pack.unpack(d)
+
+def pack(d: MyClass, arraySize: Int): IArray[Byte] =
+  given Pack[MyArray] = Pack.immutableArray(arraySize)
+  Pack.pack(d)
+```
+
+Use [Monocle](https://github.com/optics-dev/Monocle) lenses as follow:
+
+```scala3
+import bytepack.*
+
+enum En derives EnumMirror:
+    case V1, V2
+
+case class TestClass(i: Int, x: Float, e: En, e2: Option[En], e3: Option[En])
+case class UpperClass(testClass: TestClass, j: Byte)
+
+val p = UpperClass(TestClass(9, 8.0, En.V2, None, Some(En.V1)), 8.toByte)
+
+val packed = bytepack.Pack.pack(p)
+val lens = Pack.lens[UpperClass](_.testClass.x)
+lens.get(packed) 
+```
+
+SBT dependencies are:
 
 ```
-libraryDependencies += "org.openmole" %% "byte-pack" % "0.7"
+libraryDependencies += "org.openmole" %% "byte-pack" % "0.9"
+libraryDependencies += "org.openmole" %% "byte-pack-mon" % "0.9"
 ```
