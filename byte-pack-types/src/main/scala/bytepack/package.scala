@@ -53,3 +53,11 @@ object UnsignedShort:
 
 opaque type UnsignedShort = Short
 
+object FixedSizeIArray:
+  def apply[T, Size <: Int](a: IArray[T]): FixedSizeIArray[T, Size] = a
+
+  extension [T, Size <: Int] (f: FixedSizeIArray[T, Size])
+    def value: IArray[T] = f
+
+opaque type FixedSizeIArray[T, Size <: Int] = IArray[T]
+

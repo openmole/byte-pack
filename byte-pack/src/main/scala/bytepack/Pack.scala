@@ -26,6 +26,7 @@ import reflect.Selectable.reflectiveSelectable
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.reflect.ClassTag
 
 export enumextensions.EnumMirror
 
@@ -89,6 +90,26 @@ object Pack:
         case -1 => None
         case v => Some(mirror.fromOrdinal(v).get)
 
+  def immutableArray[T: ClassTag](s: Int)(using packA: Pack[T]): Pack[IArray[T]] = new Pack[IArray[T]]:
+    override def size: Int = s * packA.size
+
+    override def unpack(index: Int, b: IArray[Byte]): IArray[T] =
+      val result = Array.ofDim[T](size)
+      for
+        i <- 0 until size
+      do
+        val eIndex = index + i * packA.size
+        result(i) = packA.unpack(eIndex, b)
+      IArray.unsafeFromArray(result)
+
+    override def pack(a: IArray[T], b: ByteBuffer): Unit = a.foreach(e => packA.pack(e, b))
+
+  given [T: ClassTag, S <: Int](using packA: Pack[T], s: ValueOf[S]): Pack[FixedSizeIArray[T, S]] = new Pack[FixedSizeIArray[T, S]]:
+    inline def arrayPack = immutableArray(s.value)
+    override def size: Int = arrayPack.size
+    override def unpack(index: Int, b: IArray[Byte]): FixedSizeIArray[T, S] = FixedSizeIArray[T, S](arrayPack.unpack(index, b))
+    override def pack(a: FixedSizeIArray[T, S], b: ByteBuffer): Unit = arrayPack.pack(a.value, b)
+  
   def pack[T](t: T)(using packT: Pack[T]): IArray[Byte] =
     val buff = java.nio.ByteBuffer.allocate(packT.size)
     packT.pack(t, buff)
