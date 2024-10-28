@@ -107,7 +107,7 @@ object Pack:
   given [T: ClassTag, S <: Int](using packA: Pack[T], s: ValueOf[S]): Pack[FixedSizeIArray[T, S]] = new Pack[FixedSizeIArray[T, S]]:
     inline def arrayPack = immutableArray(s.value)
     override def size: Int = arrayPack.size
-    override def unpack(index: Int, b: IArray[Byte]): FixedSizeIArray[T, S] = FixedSizeIArray[T, S](arrayPack.unpack(index, b))
+    override def unpack(index: Int, b: IArray[Byte]): FixedSizeIArray[T, S] = FixedSizeIArray[S](arrayPack.unpack(index, b))
     override def pack(a: FixedSizeIArray[T, S], b: ByteBuffer): Unit = arrayPack.pack(a.value, b)
   
   def pack[T](t: T)(using packT: Pack[T]): IArray[Byte] =
