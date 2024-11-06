@@ -95,11 +95,13 @@ object Pack:
 
     override def unpack(index: Int, b: IArray[Byte]): IArray[T] =
       val result = Array.ofDim[T](size)
-      for
-        i <- 0 until size
+      var i = 0
+      while i < s
       do
         val eIndex = index + i * packA.size
         result(i) = packA.unpack(eIndex, b)
+        i = i + 1
+
       IArray.unsafeFromArray(result)
 
     override def pack(a: IArray[T], b: ByteBuffer): Unit = a.foreach(e => packA.pack(e, b))
