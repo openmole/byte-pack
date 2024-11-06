@@ -90,21 +90,21 @@ object Pack:
         case -1 => None
         case v => Some(mirror.fromOrdinal(v).get)
 
-  def immutableArray[T: ClassTag](s: Int)(using packA: Pack[T]): Pack[IArray[T]] = new Pack[IArray[T]]:
-    override def size: Int = s * packA.size
+  def immutableArray[T: ClassTag](s: Int)(using packT: Pack[T]): Pack[IArray[T]] = new Pack[IArray[T]]:
+    override def size: Int = s * packT.size
 
     override def unpack(index: Int, b: IArray[Byte]): IArray[T] =
-      val result = Array.ofDim[T](size)
+      val result = Array.ofDim[T](s)
       var i = 0
       while i < s
       do
-        val eIndex = index + i * packA.size
-        result(i) = packA.unpack(eIndex, b)
+        val eIndex = index + i * packT.size
+        result(i) = packT.unpack(eIndex, b)
         i = i + 1
 
       IArray.unsafeFromArray(result)
 
-    override def pack(a: IArray[T], b: ByteBuffer): Unit = a.foreach(e => packA.pack(e, b))
+    override def pack(a: IArray[T], b: ByteBuffer): Unit = a.foreach(e => packT.pack(e, b))
 
   given [T: ClassTag, S <: Int](using packA: Pack[T], s: ValueOf[S]): Pack[FixedSizeIArray[T, S]] = new Pack[FixedSizeIArray[T, S]]:
     inline def arrayPack = immutableArray(s.value)
