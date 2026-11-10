@@ -6,7 +6,7 @@ import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 ThisBuild / organization := "org.openmole"
 name := "byte-pack"
 
-ThisBuild / scalaVersion := "3.3.3"
+ThisBuild / scalaVersion := "3.9.0"
 
 ThisBuild / licenses := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/"))
 ThisBuild / homepage := Some(url("https://github.com/openmole/byte-pack"))
@@ -53,8 +53,7 @@ releaseProcess := Seq[ReleaseStep](
 )
 
 def settings = Seq (
-  resolvers += Resolver.sonatypeRepo("snapshots"),
-  scalacOptions ++= Seq("-Xtarget:11", "-language:postfixOps")
+  resolvers += Resolver.sonatypeRepo("snapshots")
 )
 
 lazy val bytePackType =
