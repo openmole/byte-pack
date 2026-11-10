@@ -71,3 +71,13 @@ class PackTests extends AnyFunSuite:
 
     assert(Pack.unpack[UpperClass](packed) == p)
     assert(Pack.unpack[UpperClass](newPacked) == p.copy(testClass = p.testClass.copy(x = 20.0f), j = 100.toByte))
+
+  test("Booleans should be packed"):
+    val b: Boolean = false
+    val packedB = Pack.pack(b)
+    assert(packedB.length == 1)
+    assert(!Pack.unpack[Boolean](packedB))
+
+    case class TestBoolean(b: Boolean, i: Int, b2: Boolean, b3: Boolean)
+    val tb = TestBoolean(true, 8, true, false)
+    Pack.pack(tb)

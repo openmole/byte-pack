@@ -71,6 +71,12 @@ object Pack:
     def size = 2
     def unpack(index: Int, b: IArray[Byte]) = UnsignedShort.cast(bytepack.BytePack.extractShort(b, index))
 
+  trait PackBoolean extends Pack[Boolean]:
+    override def pack(t: Boolean, buffer: ByteBuffer): Unit = buffer.put(if !t then 0: Byte else 1: Byte)
+    override def size: Int = 1
+    override def unpack(index: Int, b: IArray[Byte]): Boolean = BytePack.extractByte(b, index) == (1: Byte)
+
+  given PackBoolean
 
   given [T](using mirror: EnumMirror[T], sm: Mirror.SumOf[T]): Pack[T] with
     def pack(e: T, b: ByteBuffer): Unit = b.put(sm.ordinal(e).toByte)
@@ -155,7 +161,16 @@ object Pack:
   extension [T](a: Get[T])
     def apply(h: IArray[Byte]) = a(h)
 
-  def packProduct[T](p: Mirror.ProductOf[T], elems: => Array[Pack[_]]): Pack[T] with PackProduct[T] =
+  def packProduct[T](p: Mirror.ProductOf[T], elems: => Array[Pack[_]]): Pack[T] & PackProduct[T] =
+//    def packBooleans(bs: IArray[Boolean]): IArray[Byte] =
+//      val bytes = Array.ofDim[Byte]((bs.length + 7) / 8)
+//      bs.zipWithIndex.foreach:
+//        case (v, i) => if v then bytes(i / 8) = (bytes(i / 8) | (1 << (i % 8))).toByte
+//      IArray.unsafeFromArray(bytes)
+//
+//    def unpackBooleans(b: IArray[Byte], count: Int): IArray[Boolean] =
+//      IArray.tabulate(count)(i => (b(i / 8) & (1 << (i % 8))) != 0)
+
     inline def packElement(elem: Pack[_])(x: Any, b: ByteBuffer): Unit =
       elem.asInstanceOf[Pack[Any]].pack(x, b)
 
@@ -165,14 +180,18 @@ object Pack:
     inline def iterator[T](p: T) = p.asInstanceOf[Product].productIterator
 
     lazy val indexValue =
+      var total = 0
       val sizes = elems.map(_.size)
       IArray.tabulate(sizes.length): x =>
-        sizes.take(x).sum
+        val index = total
+        total = total + sizes(x)
+        index
 
     new Pack[T] with PackProduct[T]:
       def pack(e: T, b: ByteBuffer): Unit =
-        iterator(e).zip(elems.iterator).foreach:
-          case (e, elem) => packElement(elem)(e, b)
+        (iterator(e) zip elems.iterator).foreach:
+          case (e, elem) =>
+            packElement(elem)(e, b)
 
       lazy val size = elems.map(_.size).sum
 
