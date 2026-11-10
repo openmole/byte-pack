@@ -90,7 +90,5 @@ lens.get(packed)
 
 SBT dependencies are:
 
-```
-libraryDependencies += "org.openmole" %% "byte-pack" % "0.10"
-libraryDependencies += "org.openmole" %% "byte-pack-mon" % "0.10"
-```
+[![](https://jitpack.io/v/openmole/byte-pack.svg)](https://jitpack.io/#openmole/byte-pack)
+
