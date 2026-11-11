@@ -188,3 +188,41 @@ object PackMacro:
       case FieldType(possiblyTypeArg) => swapWithSuppliedType(fromType, possiblyTypeArg)
       case _ => report.errorAndAbort(s"Couldn't find field type ${fromType.show} $fieldName)")
 
+
+  def derivedImpl[T](using quotes: Quotes, tpe: Type[T])(m: Expr[Mirror.ProductOf[T]]): Expr[PackProduct[T]] =
+    import quotes.reflect.*
+
+    val fieldTypes =
+      TypeRepr.of[T].typeSymbol.caseFields.map: f =>
+        f.tree match
+          case ValDef(_, tpt, _) => tpt.tpe
+          case _ => report.errorAndAbort(s"${TypeRepr.of[T].show} is not a case class")
+
+    if fieldTypes.nonEmpty && fieldTypes.forall(_ =:= TypeRepr.of[Boolean]) then
+      val n = fieldTypes.size
+      val byteSize = (n + 7) / 8
+      '{
+        new Pack[T] with PackProduct[T]:
+          val mirror: Mirror.ProductOf[T] = $m
+
+          def size: Int = ${ Expr(byteSize) }
+
+          def pack(e: T, b: java.nio.ByteBuffer): Unit =
+            val arr = new Array[Byte](size)
+            val it = e.asInstanceOf[Product].productIterator
+            var i = 0
+            while it.hasNext do
+              if it.next().asInstanceOf[Boolean] then
+                arr(i / 8) = (arr(i / 8) | (1 << (i % 8))).toByte
+              i = i + 1
+            b.put(arr)
+
+          def unpack(index: Int, b: IArray[Byte]): T =
+            val values = Array.tabulate(${ Expr(n) }): i =>
+              (b(index + i / 8) & (1 << (i % 8))) != 0
+            mirror.fromProduct(Tuple.fromArray(values))
+
+          def index(i: Int): Int = i / 8
+      }
+    else
+      '{ Pack.derivedProduct[T](using $m) }

@@ -80,4 +80,18 @@ class PackTests extends AnyFunSuite:
 
     case class TestBoolean(b: Boolean, i: Int, b2: Boolean, b3: Boolean)
     val tb = TestBoolean(true, 8, true, false)
-    Pack.pack(tb)
+    assert(Pack.unpack[TestBoolean](Pack.pack(tb)) == tb)
+
+    case class TestAllBoolean(a: Boolean, b: Boolean, c: Boolean)
+    val tab = TestAllBoolean(true, false, true)
+
+    assert(Pack.unpack[TestAllBoolean](Pack.pack(tab)) == tab)
+    assert(Pack.pack(tab).size == 1)
+
+
+
+    case class TestLongAllBoolean(a: Boolean, b: Boolean, c: Boolean, d: Boolean, e: Boolean, f: Boolean, g: Boolean, h: Boolean, i: Boolean)
+    val tlab = TestLongAllBoolean(true, false, true, false, true, true, false, false, true)
+
+    assert(Pack.unpack[TestLongAllBoolean](Pack.pack(tlab)) == tlab)
+    assert(Pack.pack(tlab).size == 2)
