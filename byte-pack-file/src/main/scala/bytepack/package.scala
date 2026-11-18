@@ -32,7 +32,7 @@ def packedSave[T: Pack as pack](a: IArray[T], file: java.io.File) =
     do os.write(Pack.pack(e).unsafeArray)
   .get
 
-def packedLoad[T: {Pack as pack, ClassTag}](file: java.io.File): IArray[T] =
+def packedLoad[T: {Pack as pack}](file: java.io.File): IArray[IArray[Byte]] =
   Using(GZIPInputStream(BufferedInputStream(FileInputStream(file)))): is =>
     val size = pack.size
 
@@ -50,7 +50,7 @@ def packedLoad[T: {Pack as pack, ClassTag}](file: java.io.File): IArray[T] =
       Iterator
         .continually(readChunk(is, size))
         .takeWhile(_.nonEmpty)
-        .map(a => pack.unpack(0, IArray.unsafeFromArray(a)))
+        .map(a =>  IArray.unsafeFromArray(a))
         .toArray
   .get
 
