@@ -18,7 +18,6 @@ package bytepack
  */
 
 import bytepack.PackMacro.*
-import bytepack.types.{FixedSizeIArray, UnsignedByte, UnsignedShort}
 
 import scala.deriving.*
 import scala.compiletime.*
