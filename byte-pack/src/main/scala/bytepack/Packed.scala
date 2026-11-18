@@ -18,9 +18,11 @@ package bytepack
  */
 
 object Packed:
-  def apply[T](p: IArray[Byte]): Packed[T] = p
+  inline def apply[T](p: IArray[Byte]): Packed[T] = p
+  inline def unsafeFromArray[T](p: Array[Byte]): Packed[T] = IArray.unsafeFromArray(p)
 
   extension [T](p: Packed[T])
-    def toBytes: IArray[Byte] = p
+    inline def toIArray: IArray[Byte] = p
+    inline def unsafeArray = p.toIArray.unsafeArray
 
 opaque type Packed[T] = IArray[Byte]
