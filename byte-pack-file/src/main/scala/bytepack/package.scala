@@ -22,7 +22,7 @@ import scala.util.*
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-def save[T: Pack as pack](a: IArray[T], file: java.io.File) =
+def packedSave[T: Pack as pack](a: IArray[T], file: java.io.File) =
   file.delete()
   file.getParentFile.mkdirs()
 
@@ -32,7 +32,7 @@ def save[T: Pack as pack](a: IArray[T], file: java.io.File) =
     do os.write(Pack.pack(e).unsafeArray)
   .get
 
-def load[T: {Pack as pack, ClassTag}](file: java.io.File): IArray[T] =
+def packedLoad[T: {Pack as pack, ClassTag}](file: java.io.File): IArray[T] =
   Using(GZIPInputStream(BufferedInputStream(FileInputStream(file)))): is =>
     val size = pack.size
 
