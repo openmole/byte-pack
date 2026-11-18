@@ -1,4 +1,5 @@
-package bytepack
+package bytepack.types
+
 /*
  * Copyright (C) 2024 Romain Reuillon
  *

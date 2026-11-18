@@ -1,5 +1,6 @@
-package bytepack
+package bytepack.file
 
+import bytepack.*
 import java.io.{BufferedInputStream, BufferedOutputStream, FileInputStream, FileOutputStream}
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 import scala.reflect.ClassTag
