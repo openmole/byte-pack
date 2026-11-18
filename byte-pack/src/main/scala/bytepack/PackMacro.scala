@@ -95,13 +95,13 @@ object PackMacro:
 
       new Accessor[T]:
         def set(t: T): Mutation =
-          val packedT = IArray.toArray(packer(t))
+          val packedT = packer(t).toIArray
           (b: Array[Byte]) => System.arraycopy(packedT, 0, b, index, packTValue.size)
         def get: Get[T] = b => packTValue.unpack(index, b)
         def modify(f: T => T): Mutation =
           (b: Array[Byte]) =>
             val unpackT = packTValue.unpack(index, IArray.unsafeFromArray(b))
-            val packedT = IArray.toArray(packer(f(unpackT)))
+            val packedT = packer(f(unpackT)).unsafeArray
             System.arraycopy(packedT, 0, b, index, packTValue.size)
 
     }

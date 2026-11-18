@@ -29,7 +29,7 @@ object PackLens:
   inline def apply[From] = new MkLens[From]
 
 object PackIso:
-  inline def apply[T](using p: Pack[T]) = Iso[T, IArray[Byte]](Pack.pack[T])(Pack.unpack[T])
+  inline def apply[T](using p: Pack[T]) = Iso[T, Packed[T]](Pack.pack[T])(Pack.unpack[T])
 
 extension (p: Pack.type)
   transparent inline def lens[From] = PackLens.apply[From]

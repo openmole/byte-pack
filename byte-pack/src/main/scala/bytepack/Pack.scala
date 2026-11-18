@@ -117,14 +117,14 @@ object Pack:
     override def unpack(index: Int, b: IArray[Byte]): FixedSizeIArray[T, S] = FixedSizeIArray[S](arrayPack.unpack(index, b))
     override def pack(a: FixedSizeIArray[T, S], b: ByteBuffer): Unit = arrayPack.pack(a.value, b)
   
-  def pack[T](t: T)(using packT: Pack[T]): IArray[Byte] =
+  def pack[T](t: T)(using packT: Pack[T]): Packed[T] =
     val buff = java.nio.ByteBuffer.allocate(packT.size)
     packT.pack(t, buff)
-    IArray.unsafeFromArray(buff.array())
+    Packed(IArray.unsafeFromArray(buff.array()))
 
-  def unpack[T: Pack](b: IArray[Byte]): T =
+  def unpack[T: Pack](b: Packed[T]): T =
     val p = summon[Pack[T]]
-    p.unpack(0, b)
+    p.unpack(0, b.toIArray)
 
   inline def indexOf[T: PackProduct](inline i: Int) = summon[PackProduct[T]].index(i)
   def indexOf[From]: MkFieldIndex[From] = new MkFieldIndex[From]() //${ FieldIndex.fieldIndexImpl[F]('{ f }) }
